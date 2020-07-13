@@ -84,3 +84,5 @@ astronauts %>%
   ggplot(aes(a_shuttle)) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust=-1) +
   labs(title = 'Overall Most Popular Vehicles', caption = 'Assuming most common case of same vehicle') +
   xlab('Vehicle Name') + ylab('Astronauts Carried')
+
+

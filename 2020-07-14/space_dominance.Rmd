@@ -1,0 +1,179 @@
+---
+title: "Space Dominance"
+author: "Kahlil Wehmeyer"
+output: 
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+```{r setup, include=FALSE}
+# Libraries ---------------------------------------------------------------
+library(tidytuesdayR)
+library(tidyverse); theme_set(theme_minimal())
+library(janitor)
+
+
+# Importing the data ------------------------------------------------------
+
+tt <- tt_load('2020-07-14')
+astronauts <- tt$astronauts
+
+```
+
+# Introduction
+
+In this [tidy tuesday](https://github.com/rfordatascience/tidytuesday) we will be exploring which country has the most distinguished space program, what the anatomy of the missions look like, which vehicles are most used, and how their organizational roles differ.
+
+## Peeking at the data
+```{r}
+head(astronauts)
+```
+
+# Wrangling
+
+The data is very clean as far as I can tell. For the most part I will just be creating 4 new columns that deal with the vehicles. The first three will simply regex off any numbers and other identifying information about the spacecraft. The final column will be a binary column describing if that mission had any vehicle changes. That is to say the astronaut had a different launch, orbit, or descent vehicle.
+
+```{r vehicle wrangling}
+total_missions <- astronauts %>% group_by(nationality) %>% summarise(total_missions = sum(total_number_of_missions))
+
+total_missions %>% arrange(desc(total_missions)) %>% head(7) %>% select(nationality) -> top_countries 
+
+astronauts %>% filter(nationality %in% top_countries$nationality) %>% 
+  mutate(a_shuttle = str_extract(ascend_shuttle, '^[a-zA-Z0-9]*')) %>% 
+  mutate(orbit_shuttle = str_extract(in_orbit, '^[a-zA-Z0-9]*')) %>% 
+  mutate(d_shuttle = str_extract(descend_shuttle, '^[a-zA-Z0-9]*')) -> astronauts 
+
+astronauts %>% mutate(
+  a_shuttle = str_to_lower(a_shuttle),
+  orbit_shuttle = str_to_lower(orbit_shuttle),
+  d_shuttle = str_to_lower(d_shuttle)
+) -> astronauts
+
+astronauts %>% mutate(same_vehicle = 
+                        (orbit_shuttle == d_shuttle) & (d_shuttle == a_shuttle)) -> astronauts
+```
+
+# Boots on the moon!
+![](https://www.nasa.gov/sites/default/files/thumbnails/image/harrison-schmidt-bounce.gif)
+
+Let's see which country has had the largest amount of hours of EVA.
+
+```{r}
+astronauts %>% group_by(nationality) %>% 
+  summarise(EVA_Hours = sum(eva_hrs_mission)) %>% 
+  arrange(desc(EVA_Hours)) %>% head(8) %>% 
+  ggplot(aes(x = nationality, EVA_Hours)) +
+  geom_col() +
+  geom_text(aes(label=EVA_Hours), vjust = 'inward', color = 'red') + 
+  labs(title='Most EVA Hours by Country') +
+  xlab('Country') + ylab('Hours') 
+```  
+
+# Who does what?
+
+We can also break down organizational roles of each country and see how they compare.
+What positions do countries prioritize?
+
+```{r}
+astronauts$occupation <- str_to_lower(astronauts$occupation)
+astronauts %>% ggplot(aes(occupation, fill = nationality)) + 
+  geom_bar() + coord_flip() +
+  labs(title = 'Occupations by Country') + 
+  xlab('Counts') + ylab('Occupations')
+```
+The US has overall has the highest number of occupations in this dataset.
+The top category being _MSP_. Russia and the US has *roughly* the same amount of space commanders in flight but Russia seems to employ a good deal more _flight engineers_. This comparison doesn't seem too reliable seeing as Russia has a small fraction of the pilots that the US has listed. Perhaps their organization considers _commanders_ as a holistic definition of an astronaut that does both roles (commander, pilot)
+
+# Historical missions
+
+```{r}
+astronauts %>% group_by(nationality, year_of_mission) %>% summarise(n = n()) -> missions_by_year_country
+
+total_missions <- astronauts %>% group_by(nationality) %>% summarise(total_missions = sum(total_number_of_missions))
+
+total_missions %>% arrange(desc(total_missions)) %>% head(7) %>% select(nationality) -> top_countries 
+
+missions_by_year_country %>% filter(nationality %in% top_countries$nationality) %>% 
+  ggplot(aes(x = year_of_mission, y = n, color = factor(nationality))) + geom_line() +
+  guides(color=guide_legend(title='Country')) + 
+  labs(title = 'Missions by Year', subtitle = 'for Top Countries per pilot') +
+  xlab('Year') + ylab('Number of missions')
+```
+Note I filtered out some of the countries that are dwarfed by the U.S and Russia. I am only plotting the top 7 countries by their total mission count(s).
+I would also like to note that every astronaut is counted in this mission. 
+
+# Vehicles
+Let's see how common vehicle changes are.
+
+```{r}
+astronauts %>% 
+  ggplot(aes(same_vehicle)) + 
+  geom_bar() + 
+  geom_text(stat = 'count',aes(label=..count..), vjust='inward', color = 'red') +
+  labs(title = 'Same Vehicles for Mission') +
+  ylab('Count')
+```
+Since vehicle changes aren't as common as you might think, let's see which vehicles are most commonly used.
+```{r}
+astronauts %>% 
+  ggplot(aes(a_shuttle)) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust="inward", color = 'red') +
+  labs(title = 'Overall Most Popular Vehicles', caption = 'Assuming most common case of same vehicle') +
+  xlab('Vehicle Name') + ylab('Astronauts Carried')
+```
+
+By far the US STS missions have carried the most pilots with the next most popular vehicle being the Russian Soyuz
+
+# Who has the most experienced astronauts?
+This question is interesting because we need to consider what makes a seasoned astronaut. Is it more launches, EVA time, mission hours. How do we determine if occupation falls anywhere into account.
+
+```{r}
+astronauts %>% group_by(name) %>% summarise(n = max(total_number_of_missions),
+                                            eva = max(total_eva_hrs),
+                                            hours = max(total_hrs_sum)) %>% arrange(desc(n)) %>% head(15)
+```
+I think it'd be wise to use the the total EVA hours and mission hours to rank the astronauts on their careers instead of total missions. Reason being, some missions are short, this means less time in space, less time in space mean less experience.
+
+```{r}
+
+astronauts %>% group_by(name) %>% summarise(n = max(total_number_of_missions),
+                                            eva = max(total_eva_hrs),
+                                            hours = max(total_hrs_sum)) %>% 
+  arrange(desc(eva, hours)) %>% head(15)
+```
+And now we see that our start astronaut is Anatoly Solovyev! With the next most experienced astronaut being Michael Lopez-Algria.
+But this doesn't really asnwer our question of which country has the most experienced pilots.
+
+```{r}
+astronauts %>% group_by(nationality) %>% summarise(hours = median(total_hrs_sum), eva = mean(total_eva_hrs)) %>% arrange(desc(hours)) %>% head(10)
+```
+
+```{r}
+
+astronauts %>% group_by(nationality) %>% summarise(hours = mean(total_hrs_sum), eva = mean(total_eva_hrs)) %>% arrange(desc(hours)) %>% head(10) %>% 
+  ggplot(aes(x = nationality, y = hours, fill = eva)) + geom_col() +
+  guides(fill = guide_legend(title = 'EVA Hours')) +
+  labs(title = "Average Mission Hours Per Astronaut By Country", subtitle = "shaded by EVA hours.") +
+  xlab("Country") + ylab("Mean Mission Hours")
+```
+Despite having the most overall mission/EVA hours as a country. We can see that Russian astronauts out rank the Americans in terms of gained mission time both inside and outside their spacecraft.
+
+# Who has the most astronauts?
+I don't expect to be shocked by this one.
+```{r}
+astronauts %>% group_by(nationality) %>% summarise(n = n_distinct(name)) %>% arrange(desc(n)) %>% 
+  ggplot(aes(x = nationality, y = n)) + geom_col() +
+  labs(title="Distinct Astronauts by Country") +
+  xlab("Country") + ylab("Number of Astronauts")
+```
+So it isn't any surprise that perhaps the means for the U.S. and Russia are so vastly different when comparing mean hours.
+
+
+# Findings
+It seems that overall the U.S. wins the Space race when inspecting raw mission hours and succesful launches.
+On average the U.S. has more launches, launch craft and pilots while maintaining a reasonable average expedition hours count.
+
+### Sources
+
+[data](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)
+
+
