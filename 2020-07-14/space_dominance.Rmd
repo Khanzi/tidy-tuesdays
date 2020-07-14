@@ -96,7 +96,7 @@ total_missions %>% arrange(desc(total_missions)) %>% head(7) %>% select(national
 missions_by_year_country %>% filter(nationality %in% top_countries$nationality) %>% 
   ggplot(aes(x = year_of_mission, y = n, color = factor(nationality))) + geom_line() +
   guides(color=guide_legend(title='Country')) + 
-  labs(title = 'Missions by Year', subtitle = 'for Top Countries per pilot') +
+  labs(title = 'Missions by Year', subtitle = 'Per Astronaut') +
   xlab('Year') + ylab('Number of missions')
 ```
 Note I filtered out some of the countries that are dwarfed by the U.S and Russia. I am only plotting the top 7 countries by their total mission count(s).
@@ -152,7 +152,7 @@ astronauts %>% group_by(nationality) %>% summarise(hours = median(total_hrs_sum)
 astronauts %>% group_by(nationality) %>% summarise(hours = mean(total_hrs_sum), eva = mean(total_eva_hrs)) %>% arrange(desc(hours)) %>% head(10) %>% 
   ggplot(aes(x = nationality, y = hours, fill = eva)) + geom_col() +
   guides(fill = guide_legend(title = 'EVA Hours')) +
-  labs(title = "Average Mission Hours Per Astronaut By Country", subtitle = "shaded by EVA hours.") +
+  labs(title = "Average Mission Hours Per Astronaut By Country") +
   xlab("Country") + ylab("Mean Mission Hours")
 ```
 Despite having the most overall mission/EVA hours as a country. We can see that Russian astronauts out rank the Americans in terms of gained mission time both inside and outside their spacecraft.
@@ -169,8 +169,8 @@ So it isn't any surprise that perhaps the means for the U.S. and Russia are so v
 
 
 # Findings
-It seems that overall the U.S. wins the Space race when inspecting raw mission hours and succesful launches.
-On average the U.S. has more launches, launch craft and pilots while maintaining a reasonable average expedition hours count.
+It seems that overall the U.S. wins the Space race when inspecting raw mission hours and successful launches.
+On average the U.S. has more launches, launch craft and astronauts while maintaining a reasonable average expedition hours count.
 
 ### Sources
 
