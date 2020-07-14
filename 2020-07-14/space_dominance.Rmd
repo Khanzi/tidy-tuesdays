@@ -9,6 +9,7 @@ output:
 ```{r setup, include=FALSE}
 # Libraries ---------------------------------------------------------------
 library(tidytuesdayR)
+library(ggthemes)
 library(tidyverse); theme_set(theme_minimal())
 library(janitor)
 
@@ -97,7 +98,11 @@ missions_by_year_country %>% filter(nationality %in% top_countries$nationality) 
   ggplot(aes(x = year_of_mission, y = n, color = factor(nationality))) + geom_line() +
   guides(color=guide_legend(title='Country')) + 
   labs(title = 'Missions by Year', subtitle = 'Per Astronaut') +
-  xlab('Year') + ylab('Number of missions')
+  xlab('Year') + ylab('Number of missions') +
+  annotate("text", x = 1969, y = 15, label="Moon Landing") +
+  annotate("pointrange", x = 1969, y =12, ymin = 0, ymax = 12, alpha = 0.4) + 
+  annotate('text', x = 1998, y = 30, label= 'First ISS Mission') +
+  annotate("pointrange",x = 1998 , y = 25, ymin=0, ymax=25, alpha = 0.4)
 ```
 Note I filtered out some of the countries that are dwarfed by the U.S and Russia. I am only plotting the top 7 countries by their total mission count(s).
 I would also like to note that every astronaut is counted in this mission. 
@@ -111,7 +116,7 @@ astronauts %>%
   geom_bar() + 
   geom_text(stat = 'count',aes(label=..count..), vjust='inward', color = 'red') +
   labs(title = 'Same Vehicles for Mission') +
-  ylab('Count')
+  ylab('Count') + xlab ("Same Vehicle")
 ```
 Since vehicle changes aren't as common as you might think, let's see which vehicles are most commonly used.
 ```{r}
