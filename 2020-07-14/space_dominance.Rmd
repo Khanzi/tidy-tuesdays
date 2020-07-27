@@ -98,7 +98,7 @@ missions_by_year_country %>% filter(nationality %in% top_countries$nationality) 
   ggplot(aes(x = year_of_mission, y = n, color = factor(nationality))) + geom_line() +
   guides(color=guide_legend(title='Country')) + 
   labs(title = 'Missions by Year', subtitle = 'Per Astronaut') +
-  xlab('Year') + ylab('Number of missions') +
+  xlab('Year') + ylab('Astronauts Launched') +
   annotate("text", x = 1969, y = 15, label="Moon Landing") +
   annotate("pointrange", x = 1969, y =12, ymin = 0, ymax = 12, alpha = 0.4) + 
   annotate('text', x = 1998, y = 30, label= 'First ISS Mission') +
