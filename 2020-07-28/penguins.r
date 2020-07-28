@@ -1,6 +1,6 @@
 
 # Libraries ---------------------------------------------------------------
-setwd("~/Documents/tidy-tuesdays/2020-07-28")
+# setwd("~/Documents/tidy-tuesdays/2020-07-28")
 library(tidyverse); theme_set(theme_minimal())
 library(ggbeeswarm)
 library(janitor)
@@ -12,28 +12,30 @@ library(png)
 
 # Getting the data --------------------------------------------------------
 
-
 penguins <- read_csv('penguins.csv') 
-
-
-
-
 
 # Initial Visualization ---------------------------------------------------
 
-# there are 11 penguins with unknown sex
+## there are 11 penguins with unknown sex
 
 # Gender vs bill size for species
 ## Adelie
 penguins %>% 
   filter(species == "Adelie") %>% 
+
   ggplot() +
+
   geom_point(aes(bill_depth_mm, bill_length_mm, color = sex, alpha = 0.1)) +
   
-  # Labels
-  theme(legend.position = "none",
-        axis.title.x = element_blank()) +
+  # Labels and Theming
+  ## Removing Legends and x axis
+  theme(
+    legend.position = "none",
+    axis.title.x = element_blank()) +
+
+  # Setting y axis label
   ylab("Bill Length (mm)") +
+
   
   
   # Annotation
@@ -68,10 +70,14 @@ penguins %>%
 ## Gentoo
 penguins %>% 
   filter(species == "Gentoo") %>% 
+
   ggplot() +
+
   geom_point(aes(bill_depth_mm, bill_length_mm, color = sex, alpha = 0.1)) +
   
-  # Labels
+  # Labels and Theming
+
+  ## Removing legend and axis
   theme(legend.position = "none") +
   theme(axis.title = element_blank()) + 
   
@@ -111,7 +117,8 @@ penguins %>%
   ggplot() +
   geom_point(aes(bill_depth_mm, bill_length_mm, color = sex, alpha = 0.1)) +
   
-  # Labels
+  # Themeing and Labels
+  ## Removing legend and axis
   theme(legend.position = "none") +
   theme(axis.title = element_blank()) +
   
@@ -148,16 +155,18 @@ penguins %>%
 
 
 
-# Modeling gender ---------------------------------------------------------
+# Modeling sex ---------------------------------------------------------
 
-clean <- penguins %>% select(-c(year, island)) %>% filter(!is.na(flipper_length_mm))
+clean <- penguins %>% 
+select(-c(year, island)) %>% 
+filter(!is.na(flipper_length_mm))
 
 clean$sex <- clean$sex %>% factor()
 clean$species <- clean$species %>% factor()
 
 clean %>% mutate(inferred = is.na(sex)) -> clean
-x_names <- c("species","bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")
 
+x_names <- c("species","bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")
 y_names <- c("sex")
 
 ## Preparing testing
@@ -165,7 +174,7 @@ set.seed(1234)
 control <- trainControl(method='cv', number=10)
 metric <- "Accuracy"
 
-## Logistic
+## LDA
 clean_no_na <- clean %>% drop_na() %>% select(x_names, sex)
 fit.glm <- train(sex~., data = clean_no_na, method='lda', metric=metric, trControl = control)
 fit.glm 
@@ -178,10 +187,18 @@ clean
 
 
 # Plotting inferred vars --------------------------------------------------
+
+## Making sex a compound var of both inferred and sex
 clean$inferred <- as.numeric(clean$inferred)
 clean %>% mutate(sex = paste0(sex, '_', inferred)) ->  clean
 
-clean %>% filter(species == "Adelie") %>% 
+
+## Prediction plot for Adelie 
+
+
+clean %>% 
+  filter(species == "Adelie") %>% 
+
   ggplot() +
   geom_point(aes(y = bill_length_mm,  x = bill_depth_mm , size = inferred, color=sex, alpha = 0.1)) +
   
@@ -224,48 +241,65 @@ clean %>% filter(species == "Adelie") %>%
            label = "reasonable prediction\nfor male",
            color = "black") -> p4
 
-clean %>% filter(species == "Gentoo") %>% 
+## Prediction Plot for Gentoo
+clean %>% 
+  filter(species == "Gentoo") %>% 
+
   ggplot() +
- 
   geom_point(aes(y = bill_length_mm,x = bill_depth_mm , size = inferred, color=sex, alpha = 0.1)) +
   
+  ## Labels, Theming and Color Scale
   theme(legend.position = "none") +
   theme(axis.title.y = element_blank()) +
   theme(axis.title.x = element_text(size = 20)) + 
   scale_color_manual(values = c("#F8766D", "#7CAE00","#00BFC4" ,"#F8766D")) +
   xlab("Bill Depth (mm)") +
   
+
+
+  # Annotations
+
+
+  ## incorrect female prediction label
   annotate("text",
            label = "incorrect female prediction",
            x = 16.5, y = 40.5) +
   
+  ## incorrect female arrow
   annotate("curve",
            x = 16.4, xend = 15.8,
            y = 41, yend = 44.4,
-           arrow = arrow(length = unit(2, 'mm'), type = 'closed')) ->p5
+           arrow = arrow(length = unit(2, 'mm'), type = 'closed')) -> p5
   
-  # Labels and Titles
+
+# Final plot for Chinstrap + Credits
 ggdraw() + 
   draw_text("No missing data for Chinstraps", size = 30, x = 0.5, y = 0.5) +
+
   draw_text("@Khanzi_w on Twitter for #TidyTuesday | Data: Dr. Kristen Gorman | Original Art: @alaphair on Instagram",
             size = 10,
             x = 0.5, y = 0.05) -> p6
 
 # -------------------------------------------------------------------------
 
+## Adelie Image
 ggdraw() +
   draw_image("adelie.png") +
   draw_text("Adelie", y = 0.92, size = 34, color = "white") -> adelie_img
 
+## Gentoo Image
 ggdraw() +
   draw_image("gentoo.png") +
   draw_text("Gentoo", y = 0.92, size = 34, color = "white") -> gentoo_img
 
+## Chinstrap Image
 ggdraw() +
   draw_image("chinstrap.png") +
   draw_text("Chinstrap", y = 0.92, size = 34, color = "white") -> chinstrap_img
+
 # Cowplot -----------------------------------------------------------------
 
+## title
 ggdraw() +
   draw_text("Predicting Sex | Palmer Penguins", x= 0.5, y = 0.85, size = 40) +
   draw_text("LDA Model (Accuracy = 0.91, 10-fold cross validated)", x = 0.5, y = 0.60, size = 20) -> header_plot
@@ -276,22 +310,16 @@ row1 <- plot_grid(p1,p2,p3, ncol=3)
 row2 <- plot_grid(p4,p5,p6, ncol=3)
 
 plot_grid(
+
           header, 
+
           image_row,
           
           row1,
           
           row2,
           
+          ## plot settings
           rel_heights = c(1.5,2,2.5,2.5),
           nrow = 4
-)
-          
-          
-
-# TODO: Fix annotation; make them darker./ DONE :)
-# TODO: Add title and description
-# TODO: Clean up legends 
-# TODO: Tidy up theme
-
-  
+) 
