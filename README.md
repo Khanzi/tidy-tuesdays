@@ -2,6 +2,10 @@
 
 This repository contains a bunch of folders of [tidy tuesday](https://github.com/rfordatascience/tidytuesday) activities I have done.
 
+## 2020 Week 32 European Energy
+![](2020-08-04/plot.gif)
+
+
 ## 2020 Week 31 Palmer Penguins
 
 ![](2020-07-28/penguins.png)
