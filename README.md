@@ -2,6 +2,10 @@
 
 This repository contains a bunch of folders of [tidy tuesday](https://github.com/rfordatascience/tidytuesday) activities I have done.
 
+## 2020 Week 38 Tidy Kids
+
+![](2020-09-15/education_spending.png)
+
 ## 2020 Week 32 European Energy
 
 This gif is highly compressed. There is a much nicer `plot.mp4` video
